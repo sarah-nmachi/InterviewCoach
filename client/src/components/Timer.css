@@ -1,0 +1,38 @@
+.timer {
+  position: fixed;
+  top: 70px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  background: white;
+  border: 1px solid var(--gray-200);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--gray-400);
+  z-index: 50;
+  box-shadow: var(--shadow);
+  font-variant-numeric: tabular-nums;
+}
+
+.timer.warning {
+  color: var(--warning);
+  border-color: var(--warning-light);
+}
+
+.timer.critical {
+  color: var(--danger);
+  border-color: var(--danger-light);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@media (max-width: 768px) {
+  .timer {
+    top: 60px;
+    right: 12px;
+    font-size: 0.688rem;
+    padding: 4px 10px;
+  }
+}

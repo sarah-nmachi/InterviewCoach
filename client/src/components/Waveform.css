@@ -1,0 +1,33 @@
+.waveform {
+  display: flex;
+  align-items: center;
+}
+
+.waveform canvas {
+  display: block;
+}
+
+.waveform-mic {
+  position: absolute;
+  left: -210px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.waveform-mic canvas {
+  width: 200px;
+  height: 40px;
+}
+
+.waveform-tts canvas {
+  width: 120px;
+  height: 24px;
+}
+
+@media (max-width: 768px) {
+  .waveform-mic {
+    position: static;
+    transform: none;
+    margin-bottom: 8px;
+  }
+}

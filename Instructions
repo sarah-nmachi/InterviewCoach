@@ -1,0 +1,100 @@
+Build a voice-first AI Interview Coach web application using Microsoft Azure AI Foundry and Azure AI Services. Here is everything it needs to do:
+
+─────────────────────────────────────────
+TECH STACK — MICROSOFT ONLY
+─────────────────────────────────────────
+• Azure AI Foundry — Agent orchestration and GPT-4o as the LLM
+• Azure AI Speech Services — Real-time speech-to-text (mic input) and text-to-speech (agent speaks aloud using a professional neural voice such as en-US-AndrewMultilingualNeural)
+• Azure Document Intelligence — Parse uploaded CV files (PDF or DOCX)
+• Azure Blob Storage — Temporary file storage for CV and JD uploads
+• Azure App Service or Azure Static Web Apps — Host the frontend
+• Azure Cosmos DB — Store session history and feedback reports per user
+
+─────────────────────────────────────────
+ONBOARDING FLOW
+─────────────────────────────────────────
+The onboarding screen should have three inputs:
+
+1. CV UPLOAD
+   The user uploads their CV as a PDF or DOCX file. Parse it using Azure Document Intelligence and extract all text, skills, experience, and education.
+
+2. JOB DESCRIPTION
+   The user either pastes a job description URL or uploads a JD file. If a URL is provided, fetch and extract the page content. If a file is uploaded, parse it. Store the full JD text as context for the agent.
+
+3. INTERVIEW TYPE — NATURAL LANGUAGE INPUT
+   Do NOT use dropdowns or radio buttons. Instead, show a single open text field with this placeholder:
+   "Describe the interview you're preparing for e.g. This is a technical and behavioural interview for a senior engineer role, or This is an HR screening call, or This is a panel interview with the product and engineering team"
+   
+   The agent reads this free-text input and automatically determines: the tone, question style, number of interviewers to simulate, formality level, and whether to focus on technical depth, soft skills, culture fit, or a mix. The user is in full control through natural language — no predefined options.
+
+─────────────────────────────────────────
+INTERVIEW SESSION — VOICE + TEXT
+─────────────────────────────────────────
+Once the user hits Start Interview:
+
+• The Azure AI Foundry Agent is initialised with the parsed CV, the JD, and the interview type description as system context.
+• The agent speaks the first question aloud using Azure Speech text-to-speech.
+• The user responds by speaking. Azure Speech speech-to-text captures their answer in real time and displays a live transcript on screen.
+• The agent listens to the full answer, then dynamically decides whether to ask a follow-up question (e.g. "Can you walk me through the outcome of that?" or "How did you handle the pushback from stakeholders?") or move to the next planned question.
+• All questions are generated dynamically based on: the CV, the JD requirements, the interview type, and previous answers in the session. No hardcoded question list.
+• The session runs for 6 to 10 questions depending on depth of answers.
+• The agent stays in character as the interviewer throughout. It does not give hints, feedback, or coaching during the session.
+• At the very end of every session, the agent always asks: "Do you have any questions for me?" — and responds in character to whatever the user asks, as the interviewer would.
+
+─────────────────────────────────────────
+AGENT SYSTEM PROMPT — SEED THIS IN AZURE AI FOUNDRY
+─────────────────────────────────────────
+You are a professional interviewer conducting a realistic mock interview. You have been provided with three pieces of context: the candidate's CV, the job description for the role they are applying for, and a natural language description of the interview type and format written by the candidate.
+
+Your job is to conduct the interview exactly as described. Adapt your tone, question style, and depth based on the interview type. For technical interviews, go deep on architecture, problem-solving, and domain knowledge. For HR screening, focus on motivations, culture fit, and salary expectations. For panel interviews, simulate multiple interviewers with slightly different focuses.
+
+IMPORTANT — OPENING THE INTERVIEW NATURALLY:
+When you begin the interview, always start with a warm, natural introduction:
+1. Introduce yourself with a realistic first name and your role at the company (infer the company name and your title from the job description). For example: "Hi, I'm Sarah, I'm a Senior Talent Acquisition Partner here at Contoso."
+2. For HR screenings and behavioral interviews: briefly talk about the company — mention what the team does, the role you're hiring for, and why it's an exciting time to join. Keep it to 2-3 sentences. This sets the tone and makes the conversation feel real.
+3. For technical interviews: introduce yourself with your engineering title, mention the team briefly, then explain the format of the interview (e.g. "We'll start with some system design questions, then move into coding").
+4. For panel interviews: introduce yourself and mention the other panelists by name and role.
+5. After your introduction, ease into the first question naturally — don't jump straight to interrogation. Use a soft opener like "To get us started, I'd love to hear..." or "So tell me a bit about yourself and what drew you to this role."
+
+Ask one question at a time. Wait for the candidate's answer. Ask intelligent follow-up questions when answers are vague, incomplete, or interesting enough to explore further. Reference specific things from their CV or the JD naturally in your questions.
+
+Do not break character. Do not give feedback, hints, or coaching during the session. Stay fully in the role of interviewer.
+
+At the end of the session, always ask: "Do you have any questions for me?" — then answer any questions the candidate asks, in character as the interviewer.
+
+After the session ends and the candidate has no more questions, output a structured JSON object containing: overall_score (integer out of 100), strengths (array of strings), improvement_points (array of strings with specific question references), tips (array of actionable preparation tips), and question_breakdown (array of objects each containing question, answer_summary, score, and feedback).
+
+─────────────────────────────────────────
+FEEDBACK SCREEN
+─────────────────────────────────────────
+After the session, parse the agent's JSON output and render a structured feedback report:
+
+• Overall score displayed prominently as a number out of 100 with a visual score ring or bar
+• Strengths section — what the candidate did well
+• Improvement Points — specific, referenced to individual questions, with concrete suggestions
+• Preparation Tips — actionable advice for the real interview
+• Question-by-Question Breakdown — expandable accordion, one row per question, showing: the question asked, a summary of the candidate's answer, a per-question score, and specific feedback
+• A button to export the full report (use browser print-to-PDF or generate a PDF via Azure Logic Apps)
+• A button to Start a New Session
+
+─────────────────────────────────────────
+ADDITIONAL REQUIREMENTS
+─────────────────────────────────────────
+• The microphone button should show a live animated waveform while the user is speaking
+• Show a subtle "Interviewer is thinking..." indicator while the agent is processing
+• Show a live rolling transcript during the session so the user can read what was said
+• All sessions are saved to Azure Cosmos DB linked to the user's account so they can review past interviews
+• The UI should feel clean, professional, and calm — not gamified. Think enterprise interview prep tool, not quiz app.
+• Mobile responsive. The app must work on phone for users practising on the go.
+• All file uploads should be wiped from Azure Blob Storage after the session ends to protect user privacy.
+
+─────────────────────────────────────────
+SESSION TIME LIMIT — 30 MINUTES MAX
+─────────────────────────────────────────
+• Every interview session has a hard 30-minute maximum duration.
+• Display a countdown timer in the corner of the screen throughout the session (e.g. "28:42 remaining"). The timer should be subtle and non-distracting — small, muted colour — so it does not break the candidate's focus.
+• At the 25-minute mark, the agent naturally starts to wrap up. It should finish the current question thread and move toward the closing question ("Do you have any questions for me?") without abruptly cutting off mid-conversation.
+• At 28 minutes, if the session is still active, the agent says: "We're coming up on time, so I'll hand it back to you — do you have any questions for me before we wrap up?"
+• At exactly 30 minutes, the session ends automatically regardless of where the conversation is. The agent says: "That's our time — thank you so much for coming in today. We'll be in touch." The session closes and moves directly to the Feedback Screen.
+• The 30-minute limit and all timing logic should be handled client-side using a JavaScript timer, not by the agent itself. The agent is only given a cue in its context when the 25-minute and 28-minute thresholds are hit (inject a system message into the conversation: "SYSTEM: 5 minutes remaining, begin wrapping up" and "SYSTEM: 2 minutes remaining, move to closing question now").
+• The feedback report should include the total session duration so the candidate can track whether they are being too brief or too verbose in their answers.

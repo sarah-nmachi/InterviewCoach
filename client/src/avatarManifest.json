@@ -1,0 +1,77 @@
+[
+  {
+    "id": "avatar-01",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-01.png",
+    "style": "formal"
+  },
+  {
+    "id": "avatar-02",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-02.png",
+    "style": "formal"
+  },
+  {
+    "id": "avatar-03",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-03.png",
+    "style": "formal"
+  },
+  {
+    "id": "avatar-04",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-04.png",
+    "style": "formal"
+  },
+  {
+    "id": "avatar-05",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-05.png",
+    "style": "formal"
+  },
+  {
+    "id": "avatar-06",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-06.png",
+    "style": "casual"
+  },
+  {
+    "id": "avatar-07",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-07.png",
+    "style": "casual"
+  },
+  {
+    "id": "avatar-08",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-08.png",
+    "style": "casual"
+  },
+  {
+    "id": "avatar-09",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-09.png",
+    "style": "casual"
+  },
+  {
+    "id": "avatar-10",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-10.png",
+    "style": "casual"
+  },
+  {
+    "id": "avatar-11",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-11.png",
+    "style": "mixed"
+  },
+  {
+    "id": "avatar-12",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-12.png",
+    "style": "mixed"
+  },
+  {
+    "id": "avatar-13",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-13.png",
+    "style": "mixed"
+  },
+  {
+    "id": "avatar-14",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-14.png",
+    "style": "mixed"
+  },
+  {
+    "id": "avatar-15",
+    "url": "https://interviewcoachstore.blob.core.windows.net/avatars/avatar-15.png",
+    "style": "mixed"
+  }
+]
