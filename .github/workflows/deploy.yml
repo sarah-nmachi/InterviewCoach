@@ -22,39 +22,35 @@ jobs:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
           cache-dependency-path: |
-            package-lock.json
             server/package-lock.json
             client/package-lock.json
 
-      # Install server dependencies (production only)
       - name: Install server dependencies
         run: cd server && npm ci --production
 
-      # Install client dependencies and build React app
       - name: Install client dependencies
         run: cd client && npm ci
 
       - name: Build client
         run: cd client && npm run build
 
-      # Create deployment package with only what's needed in production
       - name: Prepare deployment package
         run: |
           mkdir -p deploy/server
           mkdir -p deploy/client/dist
 
-          # Copy server files (code + production node_modules)
-          cp -r server/server.js deploy/server/
-          cp -r server/package.json deploy/server/
-          cp -r server/package-lock.json deploy/server/
+          # Server code + production node_modules
+          cp server/server.js deploy/server/
+          cp server/package.json deploy/server/
+          cp server/package-lock.json deploy/server/
           cp -r server/routes deploy/server/routes
           cp -r server/services deploy/server/services
           cp -r server/node_modules deploy/server/node_modules
 
-          # Copy built client
+          # Built client static files
           cp -r client/dist/* deploy/client/dist/
 
-          # Copy root package.json (for startup script reference)
+          # Root package.json
           cp package.json deploy/
 
       - name: Upload build artifact
@@ -69,7 +65,7 @@ jobs:
     needs: build
     environment:
       name: production
-      url: https://passyourinterviewwithai.azurewebsites.net
+      url: https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net
 
     steps:
       - name: Download build artifact
@@ -78,9 +74,17 @@ jobs:
           name: app-package
           path: deploy/
 
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: deploy/
+
+      - name: Azure logout
+        run: az logout
+        if: always()
