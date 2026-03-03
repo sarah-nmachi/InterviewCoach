@@ -1,7 +1,8 @@
 // In production (Azure App Service), env vars are set via App Settings
 // In development, load from ../.env
 if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config({ path: '../.env' });
+  const path = require('path');
+  require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 }
 const express = require('express');
 const cors = require('cors');

@@ -67,49 +67,59 @@ export default function SessionHistory({ userId, onSelect, onBack }) {
 
         {!loading && sessions.length > 0 && (
           <div className="history-list">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="history-item card"
-                onClick={() => onSelect(session)}
-              >
-                <div className="history-item-left">
-                  <div className="history-date">
-                    {new Date(session.createdAt).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                  <div className="history-type">
-                    {session.interviewType?.slice(0, 80)}
-                    {(session.interviewType?.length || 0) > 80 ? '...' : ''}
-                  </div>
-                  <div className="history-meta">
-                    {session.durationMinutes && (
-                      <span>{session.durationMinutes} min</span>
+            {sessions.map((session) => {
+              const isAbandoned = session.status === 'abandoned' || session.status === 'in-progress';
+              const displayStatus = isAbandoned ? 'abandoned' : session.status;
+              return (
+                <div
+                  key={session.id}
+                  className={`history-item card${isAbandoned ? ' history-item-abandoned' : ''}`}
+                  onClick={isAbandoned ? undefined : () => onSelect(session)}
+                  style={isAbandoned ? { cursor: 'default' } : undefined}
+                >
+                  <div className="history-item-left">
+                    <div className="history-date">
+                      {new Date(session.createdAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </div>
+                    <div className="history-type">
+                      {session.interviewType?.slice(0, 80)}
+                      {(session.interviewType?.length || 0) > 80 ? '...' : ''}
+                    </div>
+                    <div className="history-meta">
+                      {session.durationMinutes && (
+                        <span>{session.durationMinutes} min</span>
+                      )}
+                      {session.totalQuestions && (
+                        <span>{session.totalQuestions} questions</span>
+                      )}
+                      <span className={`status-badge ${displayStatus}`}>
+                        {displayStatus === 'abandoned' ? 'incomplete' : displayStatus}
+                      </span>
+                    </div>
+                    {isAbandoned && (
+                      <div className="abandoned-note">
+                        Just like a real interview — once you leave, you start fresh next time.
+                      </div>
                     )}
-                    {session.totalQuestions && (
-                      <span>{session.totalQuestions} questions</span>
-                    )}
-                    <span className={`status-badge ${session.status}`}>
-                      {session.status}
-                    </span>
                   </div>
+                  {!isAbandoned && session.feedback?.overall_score !== undefined && (
+                    <div
+                      className="history-score"
+                      style={{ color: getScoreColor(session.feedback.overall_score) }}
+                    >
+                      {session.feedback.overall_score}
+                      <span>/100</span>
+                    </div>
+                  )}
                 </div>
-                {session.feedback?.overall_score !== undefined && (
-                  <div
-                    className="history-score"
-                    style={{ color: getScoreColor(session.feedback.overall_score) }}
-                  >
-                    {session.feedback.overall_score}
-                    <span>/100</span>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

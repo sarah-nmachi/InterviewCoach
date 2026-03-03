@@ -29,6 +29,13 @@ router.post('/start', async (req, res) => {
     const agentResponse = await chat(messages);
     messages.push({ role: 'assistant', content: agentResponse });
 
+    // Extract interviewer role from first message (e.g. "I'm Alex, a VP of Marketing at...")
+    let interviewerRole = null;
+    const roleMatch = agentResponse.match(/I'm\s+\w+,\s+(?:a\s+|an\s+|the\s+)?(.+?)\s+(?:at|here at|with)\s+/i);
+    if (roleMatch) {
+      interviewerRole = roleMatch[1].trim();
+    }
+
     // Store session in memory
     const session = {
       id: sessionId,
@@ -59,7 +66,8 @@ router.post('/start', async (req, res) => {
     res.json({
       sessionId,
       message: agentResponse,
-      questionCount: 1
+      questionCount: 1,
+      interviewerRole
     });
   } catch (err) {
     console.error('Interview start error:', err);
@@ -101,13 +109,22 @@ router.post('/respond', async (req, res) => {
     }
 
     // Get agent response
-    const agentResponse = await chat(session.messages);
+    let agentResponse = await chat(session.messages);
+
+    // Check if AI signalled interview is complete
+    let interviewComplete = false;
+    if (agentResponse.includes('[INTERVIEW_COMPLETE]')) {
+      interviewComplete = true;
+      agentResponse = agentResponse.replace(/\s*\[INTERVIEW_COMPLETE\]\s*/g, '').trim();
+    }
+
     session.messages.push({ role: 'assistant', content: agentResponse });
     session.questionCount++;
 
     res.json({
       message: agentResponse,
-      questionCount: session.questionCount
+      questionCount: session.questionCount,
+      interviewComplete
     });
   } catch (err) {
     console.error('Interview respond error:', err);
@@ -229,6 +246,49 @@ router.post('/force-end', async (req, res) => {
   } catch (err) {
     console.error('Force end error:', err);
     res.status(500).json({ error: 'Failed to force end interview', details: err.message });
+  }
+});
+
+/**
+ * POST /api/interview/abandon
+ * Mark a session as abandoned (called via sendBeacon on page unload)
+ */
+router.post('/abandon', async (req, res) => {
+  try {
+    const { sessionId } = req.body;
+    if (!sessionId) {
+      return res.status(400).json({ error: 'sessionId required' });
+    }
+
+    const session = activeSessions.get(sessionId);
+    if (session) {
+      // Clean up blobs
+      if (session.blobNames && session.blobNames.length > 0) {
+        deleteFiles(session.blobNames).catch(err =>
+          console.warn('Blob cleanup error on abandon:', err.message)
+        );
+      }
+
+      // Update Cosmos DB
+      try {
+        await updateSession(sessionId, session.userId, {
+          status: 'abandoned',
+          endedAt: new Date().toISOString(),
+          endReason: 'abandoned',
+          totalQuestions: session.questionCount || 0,
+          durationMinutes: Math.round((Date.now() - new Date(session.startedAt).getTime()) / 60000)
+        });
+      } catch (dbErr) {
+        console.warn('Could not update Cosmos DB on abandon:', dbErr.message);
+      }
+
+      activeSessions.delete(sessionId);
+    }
+
+    res.status(200).json({ ok: true });
+  } catch (err) {
+    console.error('Abandon error:', err);
+    res.status(500).json({ error: 'Failed to abandon session' });
   }
 });
 

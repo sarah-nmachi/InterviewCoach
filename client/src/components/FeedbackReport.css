@@ -230,6 +230,26 @@
   line-height: 1.6;
 }
 
+/* Example Answer Highlight */
+.q-detail.example-answer {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: rgba(124, 58, 237, 0.06);
+  border-left: 3px solid var(--primary);
+  border-radius: 0 8px 8px 0;
+}
+
+.q-detail.example-answer h4 {
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+}
+
+.q-detail.example-answer p {
+  color: var(--gray-700);
+  font-style: italic;
+}
+
 /* Actions */
 .feedback-actions {
   display: flex;

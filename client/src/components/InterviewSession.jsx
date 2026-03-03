@@ -9,7 +9,7 @@ const WRAP_UP_THRESHOLD = 5 * 60; // 5 minutes remaining
 const CLOSING_THRESHOLD = 2 * 60; // 2 minutes remaining
 
 export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
-  const { sessionId, firstMessage } = sessionData;
+  const { sessionId, firstMessage, interviewerRole } = sessionData;
   const { cameraMode = 'avatar', cameraStream = null, aiPersona = 'hr' } = callPrefs || {};
 
   const [transcript, setTranscript] = useState([]);
@@ -36,8 +36,11 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
   const [cameraOn, setCameraOn] = useState(cameraMode === 'camera');
   const [localStream, setLocalStream] = useState(cameraStream);
 
-  // AI persona info
-  const persona = getPersonaById(aiPersona);
+  // AI persona info — override label with the role the AI actually stated
+  const basePersona = getPersonaById(aiPersona);
+  const persona = interviewerRole
+    ? { ...basePersona, label: interviewerRole }
+    : basePersona;
   const isPanel = persona.id === 'panel';
 
   // Stable voice assignment for panel members: maps panelist name → voice
@@ -152,6 +155,18 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
 
     return () => clearInterval(timerRef.current);
   }, []);
+
+  // Mark session as abandoned if user leaves without ending
+  useEffect(() => {
+    function handleBeforeUnload() {
+      if (!sessionEndedRef.current && sessionId) {
+        const payload = JSON.stringify({ sessionId });
+        navigator.sendBeacon('/api/interview/abandon', new Blob([payload], { type: 'application/json' }));
+      }
+    }
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [sessionId]);
 
   // Speak the first message (guarded against StrictMode double-mount)
   useEffect(() => {
@@ -308,6 +323,12 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
       addToTranscript('interviewer', result.message);
       setIsThinking(false);
       await speakAgentMessage(result.message);
+
+      // Auto-end if AI signalled the interview is complete
+      if (result.interviewComplete) {
+        handleEndSession();
+        return;
+      }
     } catch (err) {
       console.error('Response error:', err);
       setIsThinking(false);
@@ -409,6 +430,12 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
       addToTranscript('interviewer', result.message);
       setIsThinking(false);
       await speakAgentMessage(result.message);
+
+      // Auto-end if AI signalled the interview is complete
+      if (result.interviewComplete) {
+        handleEndSession();
+        return;
+      }
     } catch (err) {
       console.error('Response error:', err);
       setIsThinking(false);

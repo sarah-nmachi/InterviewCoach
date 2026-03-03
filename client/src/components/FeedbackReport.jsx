@@ -158,6 +158,17 @@ export default function FeedbackReport({ feedback, onNewSession, onRedoSession }
                         <h4>Feedback</h4>
                         <p>{q.feedback}</p>
                       </div>
+                      {q.example_answer && (
+                        <div className="q-detail example-answer">
+                          <h4>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '6px', verticalAlign: 'middle' }}>
+                              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                            </svg>
+                            Example of a Strong Answer
+                          </h4>
+                          <p>{q.example_answer}</p>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

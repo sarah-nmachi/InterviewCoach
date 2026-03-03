@@ -121,6 +121,26 @@
   color: var(--warning);
 }
 
+.status-badge.abandoned {
+  background: var(--gray-100);
+  color: var(--gray-500);
+}
+
+.history-item-abandoned {
+  opacity: 0.6;
+}
+
+.history-item-abandoned:hover {
+  box-shadow: var(--shadow) !important;
+}
+
+.abandoned-note {
+  margin-top: 6px;
+  font-size: 0.75rem;
+  color: var(--gray-400);
+  font-style: italic;
+}
+
 .history-score {
   font-size: 1.75rem;
   font-weight: 700;

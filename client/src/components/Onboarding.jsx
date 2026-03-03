@@ -92,6 +92,7 @@ export default function Onboarding({ userId, onStart, prefillData }) {
         sessionId: result.sessionId,
         firstMessage: result.message,
         questionCount: result.questionCount,
+        interviewerRole: result.interviewerRole,
         materials: { cvText, jdText, interviewType: interviewType.trim(), cvBlobName, jdBlobName }
       });
     } catch (err) {
@@ -107,7 +108,7 @@ export default function Onboarding({ userId, onStart, prefillData }) {
       <div className="onboarding-container">
         <div className="onboarding-header">
           <h1>Prepare for Your Interview</h1>
-          <p>Upload your CV, add the job description, and describe the interview format. Our AI interviewer will conduct a realistic mock interview tailored to your specific role.</p>
+          <p>Our AI interviewer will conduct a realistic mock interview tailored to your specific role.</p>
           <p className="onboarding-credit">
             Created by{' '}
             <a

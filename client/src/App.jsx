@@ -67,6 +67,15 @@ export default function App() {
     setView(VIEWS.ONBOARDING);
   }, [lastSessionMaterials]);
 
+  const handlePreCallBack = useCallback(() => {
+    // Go back to onboarding with the form prefilled
+    if (sessionData?.materials) {
+      setPrefillData(sessionData.materials);
+    }
+    setSessionData(null);
+    setView(VIEWS.ONBOARDING);
+  }, [sessionData]);
+
   const handleViewHistory = useCallback(() => {
     setView(VIEWS.HISTORY);
   }, []);
@@ -84,6 +93,7 @@ export default function App() {
         onNewSession={handleNewSession}
         onViewHistory={handleViewHistory}
         showNav={view !== VIEWS.INTERVIEW && view !== VIEWS.PRE_CALL}
+        isInterviewing={view === VIEWS.INTERVIEW}
       />
       <main className="app-main">
         {view === VIEWS.ONBOARDING && (
@@ -97,6 +107,7 @@ export default function App() {
           <PreCallSetup
             sessionData={sessionData}
             onJoin={handleJoinCall}
+            onBack={handlePreCallBack}
           />
         )}
         {view === VIEWS.INTERVIEW && sessionData && (

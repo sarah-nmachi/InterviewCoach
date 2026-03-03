@@ -1,11 +1,21 @@
 import React from 'react';
 import './Header.css';
 
-export default function Header({ onNewSession, onViewHistory, showNav }) {
+export default function Header({ onNewSession, onViewHistory, showNav, isInterviewing }) {
+  const handleBrandClick = () => {
+    if (isInterviewing) {
+      if (window.confirm('Are you sure you want to abandon this interview? You will lose all progress and no feedback will be generated.')) {
+        onNewSession();
+      }
+    } else {
+      onNewSession();
+    }
+  };
+
   return (
     <header className="header">
       <div className="header-inner">
-        <div className="header-brand" onClick={onNewSession}>
+        <div className="header-brand" onClick={handleBrandClick}>
           <div className="header-logo">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
               <defs>
