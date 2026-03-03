@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import AIAvatar, { detectPersona } from './AIAvatar';
+import { unlockAudio } from '../services/speechService';
 import './PreCallSetup.css';
 
 export default function PreCallSetup({ sessionData, onJoin }) {
@@ -51,6 +52,8 @@ export default function PreCallSetup({ sessionData, onJoin }) {
   }
 
   function handleJoin() {
+    // Unlock audio on iOS — must happen inside a direct user-gesture handler
+    unlockAudio();
     onJoin({
       cameraMode,
       cameraStream: cameraMode === 'camera' ? cameraStream : null,

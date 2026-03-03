@@ -17,12 +17,14 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
+  const [isPreparingAudio, setIsPreparingAudio] = useState(false);
   const [canSpeak, setCanSpeak] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
   const [timeRemaining, setTimeRemaining] = useState(SESSION_DURATION);
   const [sessionEnded, setSessionEnded] = useState(false);
   const [ending, setEnding] = useState(false);
-  const [showTranscript, setShowTranscript] = useState(true);
+  // Default transcript to collapsed on mobile so it doesn't cover the screen
+  const [showTranscript, setShowTranscript] = useState(() => window.innerWidth > 900);
 
   const transcriptEndRef = useRef(null);
   const timerRef = useRef(null);
@@ -188,8 +190,16 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
 
   async function speakAgentMessage(text) {
     if (sessionEndedRef.current) return; // Don't speak if session ended
-    setIsSpeaking(true);
+    setIsPreparingAudio(true);
+    setIsSpeaking(false);
     setCanSpeak(false);
+
+    // Called once the synthesizer is ready and audio is about to play
+    const onSpeakStart = () => {
+      setIsPreparingAudio(false);
+      setIsSpeaking(true);
+    };
+
     try {
       // Panel: parse speaker tags and use distinct voices per panelist
       if (isPanel) {
@@ -199,20 +209,42 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
             text: seg.text,
             voice: getVoiceForPanelist(seg.name)
           }));
-          await speakSegments(voiceSegments, null, null);
+          await speakSegments(voiceSegments, onSpeakStart, null);
         } else {
           // Fallback: no tags found, speak as single voice
-          await speakText(text, null, null);
+          await speakText(text, onSpeakStart, null);
         }
       } else {
-        await speakText(text, null, null);
+        await speakText(text, onSpeakStart, null);
       }
     } catch (err) {
       console.warn('TTS error:', err);
     }
     if (sessionEndedRef.current) return; // Don't update state if session ended during speech
+    setIsPreparingAudio(false);
     setIsSpeaking(false);
     setCanSpeak(true);
+  }
+
+  /**
+   * Detect if the user is signalling they want to end the interview.
+   * Matches common phrases like "end the interview", "I'm done", "let's stop", etc.
+   */
+  function wantsToEndSession(text) {
+    const t = text.toLowerCase();
+    const patterns = [
+      /\b(end|stop|finish|terminate|quit|exit|leave|close)\b.{0,15}\b(interview|session|call|this)\b/,
+      /\b(i'?m|i am)\s+(done|finished|good)\b/,
+      /\blet'?s\s+(stop|end|finish|wrap)\b/,
+      /\b(that'?s|that is)\s+(all|it|enough)\b/,
+      /\bi\s+(want|need|would like|wanna|gotta)\s+to\s+(end|stop|leave|go|finish|quit)/,
+      /\bno\s+more\s+questions?\b/,
+      /\bwrap\s*(it)?\s*up\b/,
+      /\bi\s+don'?t\s+have\s+(any\s+)?(more|other)\s+questions?/,
+      /\bcan\s+we\s+(end|stop|finish)/,
+      /\bthank\s+you.*\bthat'?s\s+(all|it)\b/,
+    ];
+    return patterns.some(p => p.test(t));
   }
 
   // Start listening
@@ -235,10 +267,12 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
         },
         onError: (err) => {
           console.error('STT error:', err);
+          alert('Microphone error: ' + err + '\nYou can type your answer instead.');
         }
       });
     } catch (err) {
       console.error('Recognition start error:', err);
+      alert('Could not start microphone: ' + (err.message || err) + '\nYou can type your answer instead.');
       setIsListening(false);
     }
   }
@@ -255,6 +289,12 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
     addToTranscript('candidate', finalAnswer);
     setUserAnswer('');
     answerPartsRef.current = [];
+
+    // Auto-end if user signals they want to leave
+    if (wantsToEndSession(finalAnswer)) {
+      handleEndSession();
+      return;
+    }
 
     // Get next question
     setIsThinking(true);
@@ -308,6 +348,7 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
       onEnd(result.feedback);
     } catch (err) {
       console.error('End session error:', err);
+      sessionEndedRef.current = false;
       setEnding(false);
     }
   }
@@ -351,6 +392,12 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
     setUserAnswer('');
     answerPartsRef.current = [];
 
+    // Auto-end if user signals they want to leave
+    if (wantsToEndSession(text)) {
+      handleEndSession();
+      return;
+    }
+
     setIsThinking(true);
     setCanSpeak(false);
     try {
@@ -380,7 +427,7 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
   const timerClass = timeRemaining <= 120 ? 'critical' : timeRemaining <= 300 ? 'warning' : '';
 
   // AI status
-  const aiStatus = isSpeaking ? 'speaking' : isThinking ? 'thinking' : 'idle';
+  const aiStatus = isPreparingAudio ? 'preparing' : isSpeaking ? 'speaking' : isThinking ? 'thinking' : 'idle';
   // User status
   const userStatus = isListening ? 'listening' : 'idle';
 
@@ -394,7 +441,13 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
             <AIAvatar persona={persona} isSpeaking={isSpeaking} size="lg" />
           </div>
           <div className={`tile-status status-${aiStatus}`}>
-            {isSpeaking && (
+            {isPreparingAudio && (
+              <>
+                <div className="preparing-spinner" />
+                Preparing audio…
+              </>
+            )}
+            {isSpeaking && !isPreparingAudio && (
               <>
                 <div className="speaking-bars">
                   <span /><span /><span /><span />
@@ -410,7 +463,7 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
                 Thinking...
               </>
             )}
-            {!isSpeaking && !isThinking && 'Listening'}
+            {!isSpeaking && !isThinking && !isPreparingAudio && 'Listening'}
           </div>
         </div>
 
@@ -452,8 +505,13 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
       <div className={`transcript-panel ${showTranscript ? '' : 'collapsed'}`}>
         <div className="transcript-header">
           <h3>Transcript</h3>
-          <button className="transcript-toggle" onClick={() => setShowTranscript(false)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button
+            type="button"
+            className="transcript-toggle"
+            onPointerDown={(e) => { e.preventDefault(); setShowTranscript(false); }}
+            onClick={() => setShowTranscript(false)}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
@@ -551,10 +609,10 @@ export default function InterviewSession({ sessionData, callPrefs, onEnd }) {
           )}
         </button>
 
-        {/* End Call */}
+        {/* End Call — onPointerDown for reliable mobile touch */}
         <button
           className="control-btn end-call"
-          onClick={handleEndSession}
+          onPointerDown={handleEndSession}
           disabled={ending}
           title="End interview"
         >

@@ -28,9 +28,15 @@ Desktop.ini
 # Azure deployment artifacts
 .azure/
 azurite/
-deploy.zip
+deploy*.zip
 _deploy_staging/
 publish_profile.xml
+cosmos_patch.json
+policy_list.json
+app_settings_backup.json
+applogs/
+applogs.zip
+test_cv.pdf
 
 # Coverage & test output
 coverage/
